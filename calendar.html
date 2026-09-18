@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Dashboard Calendar</title>
+  <style>
+    /* Global Styles */
+    :root {
+      --bg-color: #f4f7f6;
+      --sidebar-bg: #1e293b;
+      --sidebar-text: #94a3b8;
+      --sidebar-active: #38bdf8;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --holiday-bg: #fef3c7;
+      --holiday-text: #d97706;
+      --event-bg: #e0f2fe;
+      --event-text: #0284c7;
+      --border: #e2e8f0;
+      --today-border: #2563eb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      overflow: hidden;
+    }
+
+    /* LEFT SIDEBAR */
+    .sidebar {
+      width: 280px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar-header {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .sidebar-header h2 {
+      color: #fff;
+      font-size: 1.2rem;
+    }
+
+    .nav-menu {
+      list-style: none;
+      margin-top: 20px;
+    }
+
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background-color: #334155;
+      color: var(--sidebar-active);
+      border-left: 4px solid var(--sidebar-active);
+    }
+
+    /* MAIN CONTENT AREA */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .header {
+      background-color: var(--card-bg);
+      padding: 20px 30px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-date {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--text-main);
+    }
+
+    .view-section {
+      display: none;
+      padding: 30px;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    /* CALENDAR STYLES */
+    .calendar-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+
+    .weekday-header {
+      text-align: center;
+      font-weight: bold;
+      color: var(--text-muted);
+      padding-bottom: 10px;
+    }
+
+    .day-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-height: 100px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: relative;
+    }
+
+    /* TODAY HIGHLIGHT & DOT STYLING */
+    .day-card.is-today {
+      border: 2px solid var(--today-border);
+      background-color: #f0f7ff;
+    }
+
+    .day-header-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .day-number {
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: var(--text-main);
+    }
+
+    /* Dot style for Today */
+    .today-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 4px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge-holiday {
+      background-color: var(--holiday-bg);
+      color: var(--holiday-text);
+      font-weight: bold;
+    }
+
+    .badge-event {
+      background-color: var(--event-bg);
+      color: var(--event-text);
+    }
+
+    /* IMPORT ANNOUNCEMENT FORM */
+    .form-container {
+      background-color: var(--card-bg);
+      padding: 24px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      max-width: 600px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      height: 100px;
+    }
+
+    /* ANNOUNCEMENTS LIST */
+    .announcement-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .announcement-item {
+      background-color: var(--card-bg);
+      padding: 16px;
+      border-left: 4px solid var(--accent);
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .announcement-item h4 {
+      margin-bottom: 4px;
+    }
+
+    .announcement-item .date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT SIDEBAR CONTROL COLUMN -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>Planner Hub</h2>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item active" onclick="switchTab('calendar-view', this)">
+        <span>📅</span> Calendar Grid
+      </li>
+      <li class="nav-item" onclick="switchTab('import-view', this)">
+        <span>📥</span> Import Announcement
+      </li>
+      <li class="nav-item" onclick="switchTab('announcements-view', this)">
+        <span>📢</span> View Announcements
+      </li>
+    </ul>
+  </div>
+
+  <!-- MAIN DISPLAY AREA -->
+  <div class="main-content">
+    
+    <!-- TOP HEADER SHOWING FULL DATE -->
+    <div class="header">
+      <div>
+        <div class="header-date" id="current-full-date">Loading date...</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem;">Today's Overview</div>
+      </div>
+    </div>
+
+    <!-- TAB 1: CALENDAR GRID SECTION -->
+    <div id="calendar-view" class="view-section active">
+      <div class="calendar-controls">
+        <button class="btn" onclick="changeMonth(-1)">Previous</button>
+        <h3 id="calendar-month-year">Month Year</h3>
+        <button class="btn" onclick="changeMonth(1)">Next</button>
+      </div>
+
+      <div class="calendar-grid" id="calendar-grid">
+        <!-- Generated via Javascript -->
+      </div>
+    </div>
+
+    <!-- TAB 2: IMPORT ANNOUNCEMENT FORM -->
+    <div id="import-view" class="view-section">
+      <h3 style="margin-bottom: 20px;">Import New Announcement</h3>
+      <div class="form-container">
+        <form id="announcement-form" onsubmit="handleImport(event)">
+          <div class="form-group">
+            <label for="ann-title">Title</label>
+            <input type="text" id="ann-title" placeholder="e.g., Team Sync Meeting" required>
+          </div>
+          <div class="form-group">
+            <label for="ann-date">Date</label>
+            <input type="date" id="ann-date" required>
+          </div>
+          <div class="form-group">
+            <label for="ann-desc">Description</label>
+            <textarea id="ann-desc" placeholder="Provide additional details or notes..."></textarea>
+          </div>
+          <button type="submit" class="btn">Import to Calendar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 3: ALL ANNOUNCEMENTS VIEW -->
+    <div id="announcements-view" class="view-section">
+      <h3 style="margin-bottom: 20px;">All Saved Announcements</h3>
+      <div class="announcement-list" id="announcements-container">
+        <!-- Generated dynamically -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // State Management
+    let currentDate = new Date();
+    const realToday = new Date(); // Stores actual today's date for highlighting
+    
+    // Sample pre-configured Holidays
+    const holidays = {
+      "2026-01-01": "New Year's Day",
+      "2026-07-04": "Independence Day",
+      "2026-12-25": "Christmas Day"
+    };
+
+    // User-imported announcements array
+    let announcements = [
+      {
+        title: "Project Kickoff",
+        date: "2026-09-15",
+        description: "Initial planning meeting with the dev team."
+      }
+    ];
+
+    // Initialize App
+    window.onload = () => {
+      renderHeaderDate();
+      renderCalendar();
+      renderAnnouncementsList();
+    };
+
+    // Render live dynamic header date (Day, Month, Year)
+    function renderHeaderDate() {
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('current-full-date').innerText = realToday.toLocaleDateString('en-US', options);
+    }
+
+    // Tab Navigation Logic
+    function switchTab(tabId, element) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      element.classList.add('active');
+    }
+
+    // Calendar Generation Logic
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      // Set month title text
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById('calendar-month-year').innerText = `${monthNames[month]} ${year}`;
+
+      // Render Day Headers (Sun-Sat)
+      const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      weekDays.forEach(day => {
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'weekday-header';
+        dayHeader.innerText = day;
+        grid.appendChild(dayHeader);
+      });
+
+      // Calculate Days
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      // Empty spaces for padding previous month dates
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        grid.appendChild(emptyCell);
+      }
+
+      // Check real today's parameters
+      const todayYear = realToday.getFullYear();
+      const todayMonth = realToday.getMonth();
+      const todayDay = realToday.getDate();
+
+      // Render Days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement('div');
+        dayCell.className = 'day-card';
+
+        // Check if this card represents actual TODAY
+        const isToday = (year === todayYear && month === todayMonth && day === todayDay);
+        if (isToday) {
+          dayCell.classList.add('is-today');
+        }
+
+        // Format ISO Date Key (YYYY-MM-DD)
+        const formattedMonth = String(month + 1).padStart(2, '0');
+        const formattedDay = String(day).padStart(2, '0');
+        const dateKey = `${year}-${formattedMonth}-${formattedDay}`;
+
+        // Create day number element with optional today dot
+        const dotHtml = isToday ? `<span class="today-dot" title="Today"></span>` : '';
+        dayCell.innerHTML = `
+          <div class="day-header-container">
+            <span class="day-number">${day}</span>
+            ${dotHtml}
+          </div>
+        `;
+
+        // Check & Render Holidays
+        if (holidays[dateKey]) {
+          const holidayBadge = document.createElement('div');
+          holidayBadge.className = 'badge badge-holiday';
+          holidayBadge.innerText = holidays[dateKey];
+          dayCell.appendChild(holidayBadge);
+        }
+
+        // Check & Render Announcements
+        announcements.filter(item => item.date === dateKey).forEach(event => {
+          const eventBadge = document.createElement('div');
+          eventBadge.className = 'badge badge-event';
+          eventBadge.innerText = event.title;
+          dayCell.appendChild(eventBadge);
+        });
+
+        grid.appendChild(dayCell);
+      }
+    }
+
+    function changeMonth(direction) {
+      currentDate.setMonth(currentDate.getMonth() + direction);
+      renderCalendar();
+    }
+
+    // Add Announcement Handler
+    function handleImport(e) {
+      e.preventDefault();
+
+      const title = document.getElementById('ann-title').value;
+      const date = document.getElementById('ann-date').value;
+      const description = document.getElementById('ann-desc').value;
+
+      // Add to array
+      announcements.push({ title, date, description });
+
+      // Reset form
+      document.getElementById('announcement-form').reset();
+
+      // Refresh UI components
+      renderCalendar();
+      renderAnnouncementsList();
+
+      alert('Announcement successfully imported to calendar!');
+    }
+
+    // Render imported entries list view
+    function renderAnnouncementsList() {
+      const container = document.getElementById('announcements-container');
+      container.innerHTML = '';
+
+      if (announcements.length === 0) {
+        container.innerHTML = '<p>No announcements imported yet.</p>';
+        return;
+      }
+
+      announcements.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'announcement-item';
+        el.innerHTML = `
+          <h4>${item.title}</h4>
+          <div class="date">Scheduled for: ${item.date}</div>
+          <p>${item.description || 'No description provided.'}</p>
+        `;
+        container.appendChild(el);
+      });
+    }
+  </script>
+</body>
+</html>
