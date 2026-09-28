@@ -139,6 +139,14 @@
       grid-template-columns: repeat(7, 1fr);
       gap: 10px;
     }
+    .calendar-grid.responsive-flex {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.responsive-flex .day-card {
+  flex: 1 1 120px;
+}
 
     .weekday-header {
       text-align: center;
@@ -305,7 +313,7 @@
         <button class="btn" onclick="changeMonth(1)">Next</button>
       </div>
 
-      <div class="calendar-grid" id="calendar-grid">
+      <div class="calendar-grid responsive-flex" id="calendar-grid">
         <!-- Generated via Javascript -->
       </div>
     </div>
